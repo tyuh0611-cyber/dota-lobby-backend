@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero compact-hero">
+  <div>
+    <span class="eyebrow">Control Center</span>
+    <h1>Lobby, queue and players</h1>
+    <p>Core actions are available here without switching pages.</p>
+  </div>
+  <div class="head-actions">
+    <form method="post" action="/quick-invite" data-confirm="Send quick invites by current queue priority?" class="quick-invite-form">
+      <input type="hidden" name="return_to" value="/">
+      <label>Quick invite count
+        <span class="muted">Invites first N players from the current priority queue.</span>
+        <input name="limit" type="number" min="1" max="10" value="1">
+      </label>
+      <button class="btn primary" type="submit">Quick invite</button>
+    </form>
+  </div>
+</section>
+
+<div class="control-stack control-stack-3">
+  <div class="panel control-panel settings-panel">
+    <div class="panel-head"><h2>Settings</h2><span class="muted">applies immediately</span></div>
+    <form method="post" action="/settings" class="settings-grid">
+      <input type="hidden" name="return_to" value="/">
+      <label>Twitch online
+        <select name="require_twitch_online" class="pretty-select">
+          <option value="true" {% if settings.require_twitch_online == 'true' %}selected{% endif %}>Required</option>
+          <option value="false" {% if settings.require_twitch_online == 'false' %}selected{% endif %}>Not required</option>
+        </select>
+      </label>
+      <label>Strategy
+        <select name="queue_strategy" class="pretty-select">
+          <option value="oldest_played" {% if settings.queue_strategy == 'oldest_played' %}selected{% endif %}>Longest ago</option>
+          <option value="most_slots" {% if settings.queue_strategy == 'most_slots' %}selected{% endif %}>Most slots</option>
+          <option value="recent_slot" {% if settings.queue_strategy == 'recent_slot' %}selected{% endif %}>Recent slot</option>
+          <option value="recent_played" {% if settings.queue_strategy == 'recent_played' %}selected{% endif %}>Recently played</option>
+          <option value="most_active" {% if settings.queue_strategy == 'most_active' %}selected{% endif %}>Most active</option>
+        </select>
+      </label>
+      <label>Special first
+        <input name="special_first_twitch_names" value="{{ settings.special_first_twitch_names or '' }}" placeholder="EZ25,login2">
+      </label>
+      <label>Invite timeout, sec
+        <input name="invite_timeout_seconds" type="number" min="5" max="600" value="{{ settings.invite_timeout_seconds }}">
+      </label>
+      <button class="btn primary" type="submit">Save settings</button>
+    </form>
+  </div>
+
+  <div class="panel control-panel twitch-panel">
+    <div class="panel-head">
+      <h2>Twitch</h2>
+      {% if twitch_status.connected %}
+        <span class="badge ok">connected</span>
+      {% else %}
+        <span class="badge danger">not connected</span>
+      {% endif %}
+    </div>
+    <div class="twitch-status-grid">
+      <div><span>Chatters</span><strong>{{ twitch_status.chatters_count }}</strong></div>
+      <div><span>Queue filter</span><strong>{% if twitch_status.require_online %}online required{% else %}not required{% endif %}</strong></div>
+    </div>
+    {% if twitch_status.error %}
+      <div class="alert compact-alert">{{ twitch_status.error }}</div>
+    {% endif %}
+    <a class="btn" href="/twitch/connect">Connect / reconnect Twitch</a>
+  </div>
+
+  <div class="panel control-panel lobby-panel">
+    <div class="panel-head"><h2>Lobby</h2><a href="/lobby">full page</a></div>
+    {% if lobby_error %}<div class="alert">{{ lobby_error }}</div>{% endif %}
+    {% if lobby and lobby.lobby_exists %}
+      <div class="lobby-summary"><strong>{{ lobby.lobby_id }}</strong><span>{{ lobby.members|length }} members</span></div>
+      <div class="mini-list lobby-list-large">
+      {% for m in lobby.members %}
+        <div><span>{{ m.dota_name or '-' }}</span><small>{{ m.dota_id or '-' }}</small></div>
+      {% endfor %}
+      </div>
+    {% else %}
+      <p>No lobby detected.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel form-panel">
+  <div class="panel-head"><h2>Add player / slots</h2><span class="muted">quick add by Dota ID</span></div>
+  <form method="post" action="/players/add" class="inline-form">
+    <input type="hidden" name="return_to" value="/">
+    <input name="dota_id" placeholder="Dota ID" required>
+    <input name="slots" type="number" min="1" value="1" required placeholder="Slots">
+    <button class="btn primary" type="submit">Add</button>
+  </form>
+</div>
+
+<div class="panel table-panel" id="queue-table">
+  <div class="table-title"><h2>Priority queue</h2><span>Double-click cells to edit. Changes save automatically on Enter or click outside.</span></div>
+  {% if queue_error %}<div class="alert inside">{{ queue_error }}</div>{% endif %}
+  {% if ranked %}
+  <table class="queue-table">
+    <thead>
+      <tr><th>#</th><th>Priority reason</th><th>Twitch</th><th>Dota</th><th>Steam ID</th><th>Slots</th><th>Played</th><th>Comment</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for item in ranked %}
+      {% set p = item.player %}
+      <tr class="queue-row {% if loop.first %}top-row{% endif %}" data-dota-id="{{ p.dota_id }}">
+        <td><span class="rank-pill">{{ item.rank }}</span></td>
+        <td><div class="reason-text">{{ item.reason }}</div><div class="mini-flags">{% if item.is_special %}<span class="badge warn-badge">special</span>{% endif %}{% if item.is_online %}<span class="badge ok">online</span>{% endif %}</div></td>
+        <td class="editable" data-name="twitch_name">{{ p.twitch_name or '' }}</td>
+        <td><div class="strong editable" data-name="dota_name">{{ p.dota_name or '' }}</div><div class="muted">{{ p.dota_id }}</div></td>
+        <td class="editable mono" data-name="steam_id">{{ p.steam_id or '' }}</td>
+        <td class="editable numeric" data-name="slots_left">{{ p.slots_left }}</td>
+        <td>{{ p.games_played }}</td>
+        <td class="editable comment-cell" data-name="comment">{{ p.comment or '' }}</td>
+        <td class="actions-cell"><div class="row-actions">
+          {% if p.steam_id %}<form method="post" action="/invite/{{ p.steam_id }}" data-confirm="Invite {{ p.dota_name or p.dota_id }}?"><input type="hidden" name="return_to" value="/"><button class="btn icon-btn invite-action" type="submit" title="Invite to lobby" aria-label="Invite to lobby"><span aria-hidden="true">▶</span></button></form>{% endif %}
+          <form method="post" action="/player/{{ p.dota_id }}/delete" data-confirm="Delete {{ p.dota_name or p.dota_id }} from database? This cannot be undone."><input type="hidden" name="return_to" value="/"><button class="btn icon-btn delete-action" type="submit" title="Delete from database" aria-label="Delete from database"><span aria-hidden="true">🗑</span></button></form>
+        </div></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state"><h2>No eligible players found</h2><p>Add slots, link Steam IDs, or change filters.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

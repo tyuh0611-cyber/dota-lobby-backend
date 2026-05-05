@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token or '' }}">
+  <title>{{ title or 'Dota Lobby Dashboard' }}</title>
+  <link rel="icon" href="/static/assets/logo.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/action-buttons.css">
+  <link rel="stylesheet" href="/static/player.css">
+  <link rel="stylesheet" href="/static/twitch-panel.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div id="toast-root" class="toast-root">
+    {% if request and request.query_params.get('notice') %}
+      <div class="toast {{ request.query_params.get('level', 'success') }}">{{ request.query_params.get('notice') }}</div>
+    {% endif %}
+  </div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img class="brand-logo" src="/static/assets/logo.svg?v=2" alt="Dota Lobby">
+        <div>
+          <div class="brand-title">Dota Lobby</div>
+          <div class="brand-subtitle">Streamer Control</div>
+        </div>
+      </div>
+      <nav>
+        <a href="/">Control Center</a>
+        <a href="/players">Players</a>
+        <a href="/logout">Logout</a>
+      </nav>
+    </aside>
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script src="/static/app.js" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
