@@ -7,6 +7,33 @@ class StreamerProxyClient:
         self.base_url = settings.streamer_proxy_url.rstrip('/')
         self.headers = {'X-Api-Key': settings.streamer_proxy_api_key}
 
+    async def health(self) -> dict:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f'{self.base_url}/health')
+            response.raise_for_status()
+            return response.json()
+
+    async def get_twitch_auth_url(self) -> str | None:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(f'{self.base_url}/twitch/auth-url', headers=self.headers)
+            response.raise_for_status()
+            data = response.json()
+        if isinstance(data, dict):
+            return data.get('auth_url') or data.get('url') or data.get('redirect_url')
+        return None
+
+    async def get_twitch_me(self) -> dict:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(f'{self.base_url}/twitch/me', headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+
+    async def setup_twitch(self) -> dict:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(f'{self.base_url}/twitch/setup', headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+
     async def get_chatters(self) -> list[dict]:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(f'{self.base_url}/chatters', headers=self.headers)
