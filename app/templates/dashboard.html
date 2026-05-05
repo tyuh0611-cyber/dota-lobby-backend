@@ -64,7 +64,14 @@
     {% if twitch_status.error %}
       <div class="alert compact-alert">{{ twitch_status.error }}</div>
     {% endif %}
-    <a class="btn" href="/twitch/connect">Connect / reconnect Twitch</a>
+    <div class="row-actions">
+      <a class="btn" href="/twitch/connect">Connect / reconnect Twitch</a>
+      <form method="post" action="/twitch/setup" data-confirm="Save Twitch broadcaster/moderator IDs from current token?">
+        <input type="hidden" name="return_to" value="/">
+        <button class="btn" type="submit">Setup IDs</button>
+      </form>
+      <a class="btn" href="/twitch/status" target="_blank">Status JSON</a>
+    </div>
   </div>
 
   <div class="panel control-panel lobby-panel">
