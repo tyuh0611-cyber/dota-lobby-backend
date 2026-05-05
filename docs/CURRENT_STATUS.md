@@ -69,7 +69,7 @@ Important decisions:
 
 ## Current backend migration status
 
-Systemd was being moved from the old path:
+Systemd was moved from the old path:
 
 ```text
 /opt/dota-twitch-lobby-bot/bot_backend
@@ -81,11 +81,70 @@ to the new path:
 /opt/dota-lobby-backend
 ```
 
-Known issue during migration:
+Always verify that `/opt/dota-lobby-backend/app/web_main.py` exists before trusting systemd `active` output.
 
-- `rsync` was not installed on the backend server.
-- The first import commit may not have copied all backend app files if `cp -a /opt/dota-twitch-lobby-bot/bot_backend/app .` was not run.
-- Always verify that `/opt/dota-lobby-backend/app/web_main.py` exists before trusting systemd `active` output.
+## Backend Twitch integration status
+
+Backend Control Center now talks to streamer proxy for Twitch status and setup.
+
+Implemented backend routes:
+
+```text
+/twitch/connect
+/twitch/status
+/twitch/setup
+```
+
+Implemented streamer proxy client helpers:
+
+```text
+health()
+get_twitch_auth_url()
+get_twitch_me()
+setup_twitch()
+get_chatters()
+get_lobby()
+invite()
+```
+
+Dashboard Twitch panel now includes:
+
+- `Connect / reconnect Twitch`
+- `Setup IDs`
+- `Status JSON`
+
+Verified current state:
+
+```text
+Backend Control Center -> Twitch panel -> Status JSON is OK.
+```
+
+A direct unauthenticated curl to `/twitch/status` returns `303 -> /login`, which is expected because this route is protected by web login.
+
+## Backend systemd target configuration
+
+The desired service paths are:
+
+```ini
+WorkingDirectory=/opt/dota-lobby-backend
+EnvironmentFile=/opt/dota-lobby-backend/.env
+ExecStart=/opt/dota-lobby-backend/.venv/bin/uvicorn app.web_main:app --host ${WEB_HOST} --port ${WEB_PORT}
+```
+
+## Backend `.env` rule
+
+Real `.env` stays local on the server and must not be committed.
+
+Backend `.env` should contain backend runtime settings, database settings, and streamer proxy URL/API key.
+
+It should not contain real Twitch access/refresh tokens or Steam credentials.
+
+Required streamer proxy settings:
+
+```env
+STREAMER_PROXY_URL=http://<streamer-proxy-host>:8081
+STREAMER_PROXY_API_KEY=<same PROXY_API_KEY from streamer proxy .env>
+```
 
 ## First backend checks after any migration or deploy
 
@@ -102,6 +161,7 @@ Must include at minimum:
 ./app/web_main.py
 ./app/web.py
 ./app/config.py
+./app/streamer_proxy_routes.py
 ```
 
 Then check Git:
@@ -123,43 +183,14 @@ journalctl -u dota-lobby-web -n 80 --no-pager
 
 Important: `systemctl status` immediately after restart can show active for a few milliseconds even if uvicorn crashes right after. Always check logs after a short sleep.
 
-## Backend systemd target configuration
-
-The desired service paths are:
-
-```ini
-WorkingDirectory=/opt/dota-lobby-backend
-EnvironmentFile=/opt/dota-lobby-backend/.env
-ExecStart=/opt/dota-lobby-backend/.venv/bin/uvicorn app.web_main:app --host ${WEB_HOST} --port ${WEB_PORT}
-```
-
-## Backend `.env` rule
-
-Real `.env` stays local on the server and must not be committed.
-
-Backend `.env` should contain backend runtime settings, database settings, and streamer proxy URL/API key.
-
-It should not contain real Twitch access/refresh tokens or Steam credentials.
-
-## Current cross-service focus
-
-The active project focus is Twitch integration through streamer proxy.
-
-Backend should show Twitch status in Control Center by calling streamer proxy:
-
-- `/twitch/auth-url`
-- `/chatters`
-- `/dota/lobby`
-
-If backend Twitch status is wrong, first verify streamer proxy directly before changing backend UI.
-
 ## First thing to check for Twitch issues from backend
 
 1. On streamer server, check streamer proxy directly:
 
 ```bash
 KEY=$(grep '^PROXY_API_KEY=' /opt/dota-lobby-streamer-proxy/.env | cut -d= -f2-)
-curl -i -H "X-Api-Key: $KEY" http://127.0.0.1:8081/twitch/auth-url
+curl -i -H "X-Api-Key: $KEY" http://127.0.0.1:8081/twitch/me
+curl -i -X POST -H "X-Api-Key: $KEY" http://127.0.0.1:8081/twitch/setup
 curl -i -H "X-Api-Key: $KEY" http://127.0.0.1:8081/chatters
 ```
 
@@ -174,6 +205,13 @@ grep -E 'STREAMER_PROXY_URL|STREAMER_PROXY_API_KEY' /opt/dota-lobby-backend/.env
 ```bash
 systemctl restart dota-lobby-web
 journalctl -u dota-lobby-web -n 80 --no-pager
+```
+
+4. Check in browser after login:
+
+```text
+Control Center -> Twitch panel -> Status JSON
+Control Center -> Twitch panel -> Setup IDs
 ```
 
 ## Rules for future AI work
