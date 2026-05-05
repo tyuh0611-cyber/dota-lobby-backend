@@ -13,6 +13,7 @@
 ./app/static/player.css
 ./app/static/style.css
 ./app/static/twitch-panel.css
+./app/streamer_proxy_routes.py
 ./app/telegram_bot.py
 ./app/templates/base.html
 ./app/templates/dashboard.html
@@ -26,9 +27,11 @@
 ./app/web_main.py
 ./app/web.py
 ./docs/AI_NOTES.md
+./docs/CURRENT_STATUS.md
 ./docs/project_context.md
 ./docs/project_context_old_monorepo.md
 ./.env.example
+./.gitignore
 ./PROJECT_FILES.txt
 ./README.md
 ./requirements.txt
