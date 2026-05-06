@@ -66,3 +66,14 @@ async def dota_status_api(request: Request):
         result['lobby_error'] = str(exc)
 
     return JSONResponse(result)
+
+
+@app.post('/dota/connect', dependencies=[Depends(csrf_guard)])
+async def dota_connect_from_backend(return_to: str = Form('/')):
+    try:
+        result = await streamer_proxy.connect_dota()
+    except Exception as exc:
+        return RedirectResponse(with_notice(return_to, f'Dota connect failed: {exc}', 'error'), status_code=303)
+
+    mode = result.get('mode') or 'dota'
+    return RedirectResponse(with_notice(return_to, f'Dota connect started: {mode}'), status_code=303)
