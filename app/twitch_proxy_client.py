@@ -46,9 +46,10 @@ class StreamerProxyClient:
             response.raise_for_status()
             return response.json()
 
-    async def connect_dota(self) -> dict:
+    async def connect_dota(self, steam_guard_code: str | None = None) -> dict:
+        payload = {'steam_guard_code': steam_guard_code} if steam_guard_code else {}
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(f'{self.base_url}/dota/connect', headers=self.headers)
+            response = await client.post(f'{self.base_url}/dota/connect', headers=self.headers, json=payload)
             response.raise_for_status()
             return response.json()
 
