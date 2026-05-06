@@ -80,12 +80,19 @@
       <div class="row-actions">
         <a href="/lobby">full page</a>
         <a href="/dota/status-json" target="_blank">Dota JSON</a>
-        <form method="post" action="/dota/connect" data-confirm="Try to connect streamer proxy to Steam/Dota?">
-          <input type="hidden" name="return_to" value="/">
-          <button class="btn" type="submit">Connect Dota</button>
-        </form>
       </div>
     </div>
+    {% if dota_status %}
+      <div class="twitch-status-grid">
+        <div><span>Steam</span><strong>{% if dota_status.connected %}connected{% else %}not connected{% endif %}</strong></div>
+        <div><span>Dota GC</span><strong>{% if dota_status.gc_started %}started{% else %}not started{% endif %}</strong></div>
+      </div>
+    {% endif %}
+    <form method="post" action="/dota/connect" class="inline-form" data-confirm="Connect streamer proxy to Steam/Dota?">
+      <input type="hidden" name="return_to" value="/">
+      <input name="steam_guard_code" placeholder="Steam Guard code, if needed" autocomplete="one-time-code">
+      <button class="btn" type="submit">Connect Dota</button>
+    </form>
     {% if lobby_error %}<div class="alert">{{ lobby_error }}</div>{% endif %}
     {% if lobby and lobby.lobby_exists %}
       <div class="lobby-summary"><strong>{{ lobby.lobby_id }}</strong><span>{{ lobby.members|length }} members</span></div>
