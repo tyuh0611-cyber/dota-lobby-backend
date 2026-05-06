@@ -69,11 +69,16 @@ async def dota_status_api(request: Request):
 
 
 @app.post('/dota/connect', dependencies=[Depends(csrf_guard)])
-async def dota_connect_from_backend(return_to: str = Form('/')):
+async def dota_connect_from_backend(steam_guard_code: str = Form(''), return_to: str = Form('/')):
     try:
-        result = await streamer_proxy.connect_dota()
+        result = await streamer_proxy.connect_dota(steam_guard_code.strip() or None)
     except Exception as exc:
         return RedirectResponse(with_notice(return_to, f'Dota connect failed: {exc}', 'error'), status_code=303)
 
-    mode = result.get('mode') or 'dota'
-    return RedirectResponse(with_notice(return_to, f'Dota connect started: {mode}'), status_code=303)
+    if result.get('connected'):
+        message = 'Dota connected'
+        if result.get('gc_started'):
+            message += ' and GC started'
+    else:
+        message = 'Dota connect requested'
+    return RedirectResponse(with_notice(return_to, message), status_code=303)
