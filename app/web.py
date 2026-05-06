@@ -131,7 +131,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
     if username != settings.web_admin_username or password != settings.web_admin_password:
         return templates.TemplateResponse('login.html', {'request': request, 'error': 'Invalid login or password'}, status_code=401)
     response = RedirectResponse(with_notice('/', 'Logged in'), status_code=303)
-    response.set_cookie('web_auth', settings.web_session_secret, httponly=True, samesite='strict')
+    response.set_cookie('web_auth', settings.web_session_secret, httponly=True, samesite='lax')
     return response
 
 
