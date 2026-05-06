@@ -41,3 +41,28 @@ async def twitch_setup_from_backend(return_to: str = Form('/')):
 
     display_name = result.get('display_name') or result.get('login') or result.get('broadcaster_id') or 'Twitch user'
     return RedirectResponse(with_notice(return_to, f'Twitch setup saved for {display_name}'), status_code=303)
+
+
+@app.get('/dota/status-json')
+async def dota_status_api(request: Request):
+    redirect = require_auth(request)
+    if redirect:
+        return redirect
+
+    result: dict = {'ok': True}
+    try:
+        result['health'] = await streamer_proxy.health()
+    except Exception as exc:
+        result['health_error'] = str(exc)
+
+    try:
+        result['dota'] = await streamer_proxy.get_dota_status()
+    except Exception as exc:
+        result['dota_error'] = str(exc)
+
+    try:
+        result['lobby'] = await streamer_proxy.get_lobby()
+    except Exception as exc:
+        result['lobby_error'] = str(exc)
+
+    return JSONResponse(result)
