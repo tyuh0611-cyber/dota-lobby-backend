@@ -75,10 +75,11 @@
   </div>
 
   <div class="panel control-panel lobby-panel">
-    <div class="panel-head"><h2>Lobby</h2><a href="/lobby">full page</a></div>
+    <div class="panel-head"><h2>Lobby</h2><div class="row-actions"><a href="/lobby">full page</a><a href="/dota/status-json" target="_blank">Dota JSON</a></div></div>
     {% if lobby_error %}<div class="alert">{{ lobby_error }}</div>{% endif %}
     {% if lobby and lobby.lobby_exists %}
       <div class="lobby-summary"><strong>{{ lobby.lobby_id }}</strong><span>{{ lobby.members|length }} members</span></div>
+      {% if lobby.lobby_name or lobby.mode %}<div class="muted">{{ lobby.lobby_name or '' }}{% if lobby.mode %} · {{ lobby.mode }}{% endif %}</div>{% endif %}
       <div class="mini-list lobby-list-large">
       {% for m in lobby.members %}
         <div><span>{{ m.dota_name or '-' }}</span><small>{{ m.dota_id or '-' }}</small></div>
