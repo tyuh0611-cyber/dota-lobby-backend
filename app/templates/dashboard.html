@@ -75,7 +75,17 @@
   </div>
 
   <div class="panel control-panel lobby-panel">
-    <div class="panel-head"><h2>Lobby</h2><div class="row-actions"><a href="/lobby">full page</a><a href="/dota/status-json" target="_blank">Dota JSON</a></div></div>
+    <div class="panel-head">
+      <h2>Lobby</h2>
+      <div class="row-actions">
+        <a href="/lobby">full page</a>
+        <a href="/dota/status-json" target="_blank">Dota JSON</a>
+        <form method="post" action="/dota/connect" data-confirm="Try to connect streamer proxy to Steam/Dota?">
+          <input type="hidden" name="return_to" value="/">
+          <button class="btn" type="submit">Connect Dota</button>
+        </form>
+      </div>
+    </div>
     {% if lobby_error %}<div class="alert">{{ lobby_error }}</div>{% endif %}
     {% if lobby and lobby.lobby_exists %}
       <div class="lobby-summary"><strong>{{ lobby.lobby_id }}</strong><span>{{ lobby.members|length }} members</span></div>
