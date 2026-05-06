@@ -40,6 +40,12 @@ class StreamerProxyClient:
             response.raise_for_status()
             return response.json().get('data', [])
 
+    async def get_dota_status(self) -> dict:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(f'{self.base_url}/dota/status', headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+
     async def get_lobby(self) -> dict:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(f'{self.base_url}/dota/lobby', headers=self.headers)
